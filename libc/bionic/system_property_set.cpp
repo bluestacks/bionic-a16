@@ -587,6 +587,17 @@ int bst_hack_system_property(const char *name, char *value) {
     uid_t myuid = getuid();
     pid_t mypid = getpid();
 
+    // BAM-42: Play Store downloads fail unless dataloader is disabled for that app.
+    if (myuid >= 10000 && name != NULL && value != NULL
+            && strcmp(name, "debug.inc.disable_dataloader") == 0) {
+        char packageName[MAX_BUFF_LENGTH];
+        int ret = get_packagname_from_pid(mypid, packageName);
+        if (ret != 0 && strcmp(packageName, "com.android.vending") == 0) {
+            len = strlen(VALUE_TRUE);
+            memcpy(value, VALUE_TRUE, len + 1);
+        }
+    }
+
     // If some third party app is trying to read system properties ro.secure/ro.debuggable, then show them the modified values.
     // Apps like puzzle and dragon tries to read ro.debuggable and crashes if does not get user build specific values.
     if (myuid >= 10000
